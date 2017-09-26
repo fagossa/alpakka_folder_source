@@ -1,0 +1,18 @@
+<configuration debug="true">
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>${LOG_STDOUT_LEVEL:-DEBUG}</level>
+        </filter>
+        <encoder>
+            <pattern>%date %-5level [%X{akkaSource}] %logger{20} %message%n%xException{10}</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="akka.stream.Log" level="INFO"/>
+
+    <root level="INFO">
+        <appender-ref ref="STDOUT"/>
+    </root>
+
+</configuration>

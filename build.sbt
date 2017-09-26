@@ -10,6 +10,8 @@ lazy val root = (project in file(".")).
     name := "alpakka-folders",
     libraryDependencies ++= Seq(
       scalaTest % Test,
-      alpakka
+      alpakka,
+      logback,
+      akkaLog
     )
   )

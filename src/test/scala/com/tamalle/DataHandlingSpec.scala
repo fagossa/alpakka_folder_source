@@ -4,12 +4,11 @@ import java.nio.file.{Path, Paths}
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import com.tamalle.input.DataPipeline.startPipeline
+import com.tamalle.input.DataPipeline.onlyCSVFiles
 import com.tamalle.input.SourceProvider.currentPath
 import com.tamalle.input.{SinkProvider, SourceProvider}
 import com.typesafe.config.ConfigFactory
 import org.scalatest.concurrent.{Eventually, IntegrationPatience, ScalaFutures}
-import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{BeforeAndAfterAll, FunSpec, Matchers}
 
 import scala.concurrent.duration._
@@ -22,9 +21,6 @@ class DataHandlingSpec extends FunSpec
   with IntegrationPatience
   with BeforeAndAfterAll {
 
-  implicit override val patienceConfig =
-    PatienceConfig(timeout = scaled(Span(2, Seconds)), interval = scaled(Span(5, Millis)))
-
   private val config = ConfigFactory.parseResources("application.conf")
     .withFallback(ConfigFactory.systemProperties())
     .resolve()
@@ -36,14 +32,19 @@ class DataHandlingSpec extends FunSpec
 
     def currentDirectory = Paths.get(s"$currentPath/src/test/scala/input")
 
-    it(s"should read files from a folder sink in $currentDirectory") {
+    it(s"should filter files from a folder sink in $currentDirectory") {
+      // Given
+      val aSource = SourceProvider.listFilesIn(currentDirectory)
+      val aSink = SinkProvider.listSink[Path]
       // When
-      val future: Future[Seq[Path]] = startPipeline(
-        SourceProvider(currentDirectory),
-        SinkProvider(),
-        1.seconds)
+      val future: Future[Seq[Path]] =
+        aSource
+          .via(onlyCSVFiles)
+          .runWith(aSink)
       // Then
-      whenReady(future) { r => r.map(_.getFileName.toString).toList shouldBe List("sample.csv") }
+      whenReady(future) {
+        _.map(_.getFileName.toString).toList shouldBe List("sample.csv")
+      }
     }
   }
 
